@@ -335,37 +335,54 @@
         <div class="demo-area">
           <svg width="380" height="285" viewBox="0 0 400 300">
             <style>
-              @keyframes sunGlow { 0%, 100% { transform: scale(1); opacity: 0.85; } 50% { transform: scale(1.2); opacity: 1; } }
-              .sun-set { animation: sunGlow 4s ease-in-out infinite; transform-origin: 280px 180px; }
+              @keyframes sunPulse { 0%, 100% { transform: scale(1); opacity: 0.85; } 50% { transform: scale(1.15); opacity: 1; } }
+              @keyframes cloudMove { from { transform: translateX(0); } to { transform: translateX(500px); } }
+              @keyframes birdFly { 0% { transform: translate(0, 0); } 25% { transform: translate(30px, -10px); } 50% { transform: translate(60px, 5px); } 75% { transform: translate(90px, -8px); } 100% { transform: translate(120px, 0); } }
+              .sun-set { animation: sunPulse 4s ease-in-out infinite; transform-origin: 280px 180px; }
+              .cloud1 { animation: cloudMove 18s linear infinite; }
+              .cloud2 { animation: cloudMove 25s linear infinite 5s; }
+              .cloud3 { animation: cloudMove 30s linear infinite 12s; }
+              .bird1 { animation: birdFly 6s ease-in-out infinite; }
+              .bird2 { animation: birdFly 7s ease-in-out infinite 2s; }
             </style>
             <defs>
               <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#1e1b4b"/>
-                <stop offset="40%" stop-color="#7c3aed"/>
-                <stop offset="75%" stop-color="#f59e0b"/>
-                <stop offset="100%" stop-color="#f97316"/>
+                <stop offset="0%" stop-color="#0f172a"/>
+                <stop offset="35%" stop-color="#1e3a5f"/>
+                <stop offset="65%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#ea580c"/>
               </linearGradient>
               <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#4c1d95"/>
-                <stop offset="100%" stop-color="#2e1065"/>
+                <stop offset="0%" stop-color="#166534"/>
+                <stop offset="100%" stop-color="#14532d"/>
               </linearGradient>
               <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#6d28d9"/>
-                <stop offset="100%" stop-color="#3b0764"/>
+                <stop offset="0%" stop-color="#15803d"/>
+                <stop offset="100%" stop-color="#166534"/>
               </linearGradient>
               <linearGradient id="m3" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#9333ea"/>
-                <stop offset="100%" stop-color="#581c87"/>
+                <stop offset="0%" stop-color="#22c55e"/>
+                <stop offset="100%" stop-color="#15803d"/>
               </linearGradient>
+              <filter id="sunHaze">
+                <feGaussianBlur stdDeviation="6" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
             </defs>
             <rect width="400" height="300" fill="url(#sky)"/>
             <g class="sun-set">
-              <circle cx="280" cy="180" r="28" fill="#fbbf24" opacity="0.9"/>
+              <circle cx="280" cy="180" r="28" fill="#fbbf24" filter="url(#sunHaze)"/>
+              <path d="M280,148 Q295,160 288,180 Q300,195 280,210 Q260,195 272,180 Q265,160 280,148Z" fill="#fef08a" opacity="0.9"/>
             </g>
-            <polygon points="0,280 60,170 120,230 180,140 250,200 320,110 400,180 400,300 0,300" fill="url(#m1)"/>
-            <polygon points="0,300 80,200 160,250 240,170 340,210 400,160 400,300" fill="url(#m2)" opacity="0.85"/>
-            <polygon points="0,300 50,240 130,280 200,220 300,260 400,230 400,300" fill="url(#m3)" opacity="0.75"/>
-            <rect x="0" y="260" width="400" height="40" fill="#1a0a2e" opacity="0.6"/>
+            <polygon points="0,280 50,175 100,230 160,145 230,200 300,115 400,185 400,300 0,300" fill="url(#m1)"/>
+            <polygon points="0,300 70,210 150,255 230,175 330,215 400,165 400,300" fill="url(#m2)" opacity="0.9"/>
+            <polygon points="0,300 45,245 120,285 190,225 290,265 400,238 400,300" fill="url(#m3)" opacity="0.85"/>
+            <g class="cloud1"><circle cx="60" cy="60" r="18" fill="#fff" opacity="0.15"/><circle cx="80" cy="55" r="22" fill="#fff" opacity="0.12"/><circle cx="105" cy="62" r="16" fill="#fff" opacity="0.1"/></g>
+            <g class="cloud2"><circle cx="220" cy="40" r="14" fill="#fff" opacity="0.12"/><circle cx="238" cy="36" r="18" fill="#fff" opacity="0.1"/><circle cx="258" cy="42" r="13" fill="#fff" opacity="0.08"/></g>
+            <g class="cloud3"><circle cx="-20" cy="90" r="16" fill="#fff" opacity="0.1"/><circle cx="0" cy="85" r="20" fill="#fff" opacity="0.08"/><circle cx="25" cy="92" r="14" fill="#fff" opacity="0.06"/></g>
+            <g class="bird1" fill="none" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round"><path d="M50,70 Q55,66 60,70"/><path d="M60,70 Q65,66 70,70"/></g>
+            <g class="bird2" fill="none" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round"><path d="M90,50 Q94,47 98,50"/><path d="M98,50 Q102,47 106,50"/></g>
+            <rect x="0" y="265" width="400" height="35" fill="#0f172a" opacity="0.5"/>
           </svg>
         </div>
         <div class="code-section">
