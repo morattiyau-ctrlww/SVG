@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG + Canvas 繪圖教學 — 用 AI 畫圖超簡單</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 1000px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 3rem; }
+  header h1 {
+    font-size: 2.8rem;
+    background: linear-gradient(135deg, #f97316, #ec4899, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+  header p { font-size: 1.15rem; color: #94a3b8; max-width: 600px; margin: 0 auto; }
+  .intro {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+    border: 1px solid #334155;
+  }
+  .intro h2 { color: #fbbf24; margin-bottom: 1rem; font-size: 1.5rem; }
+  .intro p { margin-bottom: 0.8rem; }
+  .intro ul { padding-left: 1.5rem; }
+  .intro li { margin-bottom: 0.5rem; }
+  .intro strong { color: #a78bfa; }
+
+  .step-grid { display: flex; flex-direction: column; gap: 2.5rem; }
+
+  .card {
+    background: #1e293b;
+    border-radius: 16px;
+    border: 1px solid #334155;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #6366f1; }
+  .card-header {
+    padding: 1.5rem 2rem 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .card-header .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .card-header h2 { font-size: 1.4rem; color: #f1f5f9; }
+  .card-header .badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .badge-svg { background: #065f46; color: #6ee7b7; }
+  .badge-canvas { background: #1e3a5f; color: #93c5fd; }
+
+  .card-body { padding: 1.5rem 2rem 2rem 2rem; }
+
+  .prompt-box {
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    border-left: 4px solid #6366f1;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    position: relative;
+  }
+  .prompt-box .label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6366f1;
+    margin-bottom: 0.4rem;
+    font-family: system-ui, sans-serif;
+  }
+  .prompt-box .copy-btn {
+    position: absolute;
+    top: 0.5rem; right: 0.75rem;
+    background: #334155;
+    border: none;
+    color: #94a3b8;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .prompt-box .copy-btn:hover { background: #475569; color: #fff; }
+
+  .demo-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    background: #0f172a;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .demo-area svg, .demo-area canvas {
+    border-radius: 8px;
+    background: #fff;
+    max-width: 100%;
+  }
+
+  .code-section details {
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    margin-top: 1rem;
+  }
+  .code-section summary {
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 600;
+    user-select: none;
+  }
+  .code-section summary:hover { color: #e2e8f0; }
+  .code-section pre {
+    margin-top: 0.75rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .code-section .lang-tag {
+    display: inline-block;
+    font-size: 0.65rem;
+    background: #334155;
+    color: #94a3b8;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+
+  .tip-box {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-top: 2rem;
+    border-left: 4px solid #fbbf24;
+  }
+  .tip-box h3 { color: #fbbf24; margin-bottom: 0.75rem; }
+  .tip-box ul { padding-left: 1.5rem; }
+  .tip-box li { margin-bottom: 0.4rem; }
+  .tip-box code {
+    background: #0f172a;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: #a78bfa;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #334155;
+    color: #64748b;
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 1rem; }
+    header h1 { font-size: 1.8rem; }
+    .card-body, .card-header { padding-left: 1.25rem; padding-right: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>🎨 用 AI 畫 SVG & Canvas</h1>
+    <p>不會寫 code 也沒關係 — 把需求丟給 AI，它就幫你畫好</p>
+  </header>
+
+  <div class="intro">
+    <h2>🧠 怎麼玩？</h2>
+    <p>你只需要做三件事：</p>
+    <ul>
+      <li><strong>1.</strong> 想好你要畫什麼（一隻貓、一個圖表、一個 Logo…）</li>
+      <li><strong>2.</strong> 打開 <strong>Grok</strong>、<strong>Gemini</strong>、<strong>ChatGPT</strong> 或 <strong>Claude</strong></li>
+      <li><strong>3.</strong> 把提示詞（Prompt）貼給它，它就幫你生出 HTML</li>
+    </ul>
+    <p style="margin-top: 0.8rem;">👇 下面每一個例子，你都可以直接複製 prompt 去 AI 試試看。</p>
+  </div>
+
+  <div class="step-grid">
+
+    <!-- ===== 範例 1 ===== -->
+    <div class="card">
+      <div class="card-header">
+        <span class="step-num">1</span>
+        <h2>笑臉太陽</h2>
+        <span class="badge badge-svg">SVG</span>
+      </div>
+      <div class="card-body">
+        <div class="prompt-box">
+          <span class="label">🤖 複製這段 Prompt 給 AI</span>
+          <button class="copy-btn" onclick="copyText(this)">複製</button>
+          Draw a happy sun with rays using SVG. Center a yellow circle, add orange triangular rays around it, and draw a simple smiling face (two dot eyes and a curved smile) in the center. Make it 300x300.
+        </div>
+        <div class="demo-area">
+          <svg width="280" height="280" viewBox="0 0 300 300">
+            <defs>
+              <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#fef08a"/>
+                <stop offset="70%" stop-color="#facc15"/>
+                <stop offset="100%" stop-color="#f59e0b"/>
+              </radialGradient>
+            </defs>
+            <g transform="translate(150,150)">
+              <polygon points="0,-110 15,-80 45,-90 30,-60 60,-45 45,-25 70,0 45,20 60,45 30,40 45,70 15,60 0,90 -15,60 -45,70 -30,40 -60,45 -45,20 -70,0 -45,-25 -60,-45 -30,-60 -45,-90 -15,-80" fill="#f59e0b" opacity="0.5"/>
+              <circle cx="0" cy="0" r="50" fill="url(#sunGlow)" stroke="#d97706" stroke-width="3"/>
+              <circle cx="-16" cy="-10" r="5" fill="#92400e"/>
+              <circle cx="16" cy="-10" r="5" fill="#92400e"/>
+              <path d="M-20,12 Q0,32 20,12" stroke="#92400e" stroke-width="3" fill="none" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>
+        <div class="code-section">
+          <details>
+            <summary>📄 產出的 SVG 原始碼</summary>
+            <pre><span class="lang-tag">HTML</span>&lt;svg width="300" height="300" viewBox="0 0 300 300"&gt;
+  &lt;defs&gt;
+    &lt;radialGradient id="glow"&gt;
+      &lt;stop offset="0%" stop-color="#fef08a"/&gt;
+      &lt;stop offset="100%" stop-color="#f59e0b"/&gt;
+    &lt;/radialGradient&gt;
+  &lt;/defs&gt;
+  &lt;!-- rays --&gt;
+  &lt;g transform="translate(150,150)"&gt;
+    &lt;polygon points="0,-110 15,-80 45,-90 ..." fill="#f59e0b"/&gt;
+    &lt;circle cx="0" cy="0" r="50" fill="url(#glow)"/&gt;
+    &lt;circle cx="-16" cy="-10" r="5" fill="#92400e"/&gt;
+    &lt;circle cx="16" cy="-10" r="5" fill="#92400e"/&gt;
+    &lt;path d="M-20,12 Q0,32 20,12" stroke="#92400e" fill="none"/&gt;
+  &lt;/g&gt;
+&lt;/svg&gt;</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 範例 2 ===== -->
+    <div class="card">
+      <div class="card-header">
+        <span class="step-num">2</span>
+        <h2>漸層山峰</h2>
+        <span class="badge badge-svg">SVG</span>
+      </div>
+      <div class="card-body">
+        <div class="prompt-box">
+          <span class="label">🤖 複製這段 Prompt 給 AI</span>
+          <button class="copy-btn" onclick="copyText(this)">複製</button>
+          Create a beautiful landscape scene with layered mountains at sunset using SVG. Use gradient fills for the sky and mountains. Include a setting sun, several mountain layers in different purple/blue shades, and some pine trees at the bottom. Size 400x300.
+        </div>
+        <div class="demo-area">
+          <svg width="380" height="285" viewBox="0 0 400 300">
+            <defs>
+              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1e1b4b"/>
+                <stop offset="40%" stop-color="#7c3aed"/>
+                <stop offset="75%" stop-color="#f59e0b"/>
+                <stop offset="100%" stop-color="#f97316"/>
+              </linearGradient>
+              <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#4c1d95"/>
+                <stop offset="100%" stop-color="#2e1065"/>
+              </linearGradient>
+              <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6d28d9"/>
+                <stop offset="100%" stop-color="#3b0764"/>
+              </linearGradient>
+              <linearGradient id="m3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#9333ea"/>
+                <stop offset="100%" stop-color="#581c87"/>
+              </linearGradient>
+            </defs>
+            <rect width="400" height="300" fill="url(#sky)"/>
+            <circle cx="280" cy="180" r="28" fill="#fbbf24" opacity="0.9"/>
+            <polygon points="0,280 60,170 120,230 180,140 250,200 320,110 400,180 400,300 0,300" fill="url(#m1)"/>
+            <polygon points="0,300 80,200 160,250 240,170 340,210 400,160 400,300" fill="url(#m2)" opacity="0.85"/>
+            <polygon points="0,300 50,240 130,280 200,220 300,260 400,230 400,300" fill="url(#m3)" opacity="0.75"/>
+            <rect x="0" y="260" width="400" height="40" fill="#1a0a2e" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="code-section">
+          <details>
+            <summary>📄 產出的 SVG 原始碼</summary>
+            <pre><span class="lang-tag">HTML</span>&lt;svg width="400" height="300"&gt;
+  &lt;defs&gt;
+    &lt;linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"&gt;
+      &lt;stop offset="0%" stop-color="#1e1b4b"/&gt;
+      &lt;stop offset="40%" stop-color="#7c3aed"/&gt;
+      &lt;stop offset="75%" stop-color="#f59e0b"/&gt;
+      &lt;stop offset="100%" stop-color="#f97316"/&gt;
+    &lt;/linearGradient&gt;
+    ...
+  &lt;/defs&gt;
+  &lt;rect width="400" height="300" fill="url(#sky)"/&gt;
+  &lt;circle cx="280" cy="180" r="28" fill="#fbbf24"/&gt;
+  &lt;polygon points="0,280 60,170 120,230 ..." fill="url(#m1)"/&gt;
+  ...
+&lt;/svg&gt;</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 範例 3 ===== -->
+    <div class="card">
+      <div class="card-header">
+        <span class="step-num">3</span>
+        <h2>動態粒子 (Canvas)</h2>
+        <span class="badge badge-canvas">Canvas</span>
+      </div>
+      <div class="card-body">
+        <div class="prompt-box">
+          <span class="label">🤖 複製這段 Prompt 給 AI</span>
+          <button class="copy-btn" onclick="copyText(this)">複製</button>
+          Create an animated particle system using HTML5 Canvas and JavaScript. Draw 80 floating circles in different sizes and soft colors that drift upward slowly and wrap around. Dark background with a subtle glow effect on each particle. Add a gentle mouse interaction where particles slightly avoid the cursor. Size 400x300.
+        </div>
+        <div class="demo-area">
+          <canvas id="particleCanvas" width="380" height="280"></canvas>
+        </div>
+        <div class="code-section">
+          <details>
+            <summary>📄 Canvas JavaScript 動畫</summary>
+            <pre><span class="lang-tag">JavaScript</span>const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const particles = [];
+
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: 2 + Math.random() * 6,
+    speed: 0.2 + Math.random() * 0.6,
+    color: `hsla(${200 + Math.random() * 100}, 80%, 70%, 0.6)`
+  });
+}
+
+function animate() {
+  ctx.fillStyle = 'rgba(10,10,30,0.15)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (const p of particles) {
+    p.y -= p.speed;
+    if (p.y < -p.r) p.y = canvas.height + p.r;
+    // mouse avoidance ...
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+  }
+  requestAnimationFrame(animate);
+}
+animate();</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 範例 4 ===== -->
+    <div class="card">
+      <div class="card-header">
+        <span class="step-num">4</span>
+        <h2>長條圖</h2>
+        <span class="badge badge-svg">SVG</span>
+      </div>
+      <div class="card-body">
+        <div class="prompt-box">
+          <span class="label">🤖 複製這段 Prompt 給 AI</span>
+          <button class="copy-btn" onclick="copyText(this)">複製</button>
+          Create a stylish bar chart using SVG. Show 5 bars with labels: S, M, L, XL, XXL. Bar values: 120, 250, 400, 350, 180. Use gradient fills in different colors (blue, cyan, green, yellow, pink). Add a dark background, value labels on top, and rounded corners on bars. Size 400x300.
+        </div>
+        <div class="demo-area">
+          <svg width="380" height="280" viewBox="0 0 400 300">
+            <defs>
+              <linearGradient id="b1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#2563eb"/></linearGradient>
+              <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#67e8f9"/><stop offset="100%" stop-color="#0891b2"/></linearGradient>
+              <linearGradient id="b3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#16a34a"/></linearGradient>
+              <linearGradient id="b4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#d97706"/></linearGradient>
+              <linearGradient id="b5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f472b6"/><stop offset="100%" stop-color="#db2777"/></linearGradient>
+            </defs>
+            <rect width="400" height="300" fill="#0f172a" rx="10"/>
+            <line x1="60" y1="40" x2="60" y2="250" stroke="#334155" stroke-width="2"/>
+            <line x1="60" y1="250" x2="370" y2="250" stroke="#334155" stroke-width="2"/>
+            <g transform="translate(85,0)">
+              <rect x="0" y="130" width="44" height="120" rx="6" fill="url(#b1)"/>
+              <text x="22" y="120" fill="#94a3b8" font-size="13" text-anchor="middle">120</text>
+              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">S</text>
+            </g>
+            <g transform="translate(155,0)">
+              <rect x="0" y="50" width="44" height="200" rx="6" fill="url(#b2)"/>
+              <text x="22" y="40" fill="#94a3b8" font-size="13" text-anchor="middle">250</text>
+              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">M</text>
+            </g>
+            <g transform="translate(225,0)">
+              <rect x="0" y="10" width="44" height="240" rx="6" fill="url(#b3)"/>
+              <text x="22" y="0" fill="#94a3b8" font-size="13" text-anchor="middle">400</text>
+              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">L</text>
+            </g>
+            <g transform="translate(295,0)">
+              <rect x="0" y="40" width="44" height="210" rx="6" fill="url(#b4)"/>
+              <text x="22" y="30" fill="#94a3b8" font-size="13" text-anchor="middle">350</text>
+              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">XL</text>
+            </g>
+            <g transform="translate(365,0)">
+              <rect x="0" y="70" width="44" height="180" rx="6" fill="url(#b5)"/>
+              <text x="22" y="60" fill="#94a3b8" font-size="13" text-anchor="middle">180</text>
+              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">XXL</text>
+            </g>
+          </svg>
+        </div>
+        <div class="code-section">
+          <details>
+            <summary>📄 產出的 SVG 原始碼</summary>
+            <pre><span class="lang-tag">HTML</span>&lt;svg width="400" height="300"&gt;
+  &lt;defs&gt;
+    &lt;linearGradient id="b1"&gt;
+      &lt;stop offset="0%" stop-color="#60a5fa"/&gt;
+      &lt;stop offset="100%" stop-color="#2563eb"/&gt;
+    &lt;/linearGradient&gt;
+    ...
+  &lt;/defs&gt;
+  &lt;rect width="400" height="300" fill="#0f172a"/&gt;
+  &lt;!-- bars with labels --&gt;
+&lt;/svg&gt;</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 範例 5 ===== -->
+    <div class="card">
+      <div class="card-header">
+        <span class="step-num">5</span>
+        <h2>互動時鐘 (Canvas)</h2>
+        <span class="badge badge-canvas">Canvas</span>
+      </div>
+      <div class="card-body">
+        <div class="prompt-box">
+          <span class="label">🤖 複製這段 Prompt 給 AI</span>
+          <button class="copy-btn" onclick="copyText(this)">複製</button>
+          Create an analog clock using HTML5 Canvas and JavaScript. Draw a circular face with hour markers (1-12), hour, minute, and second hands that update in real time. Use a dark theme with glowing neon-style hands. Smooth second hand movement. Size 300x300.
+        </div>
+        <div class="demo-area">
+          <canvas id="clockCanvas" width="280" height="280"></canvas>
+        </div>
+        <div class="code-section">
+          <details>
+            <summary>📄 Canvas JavaScript 時鐘</summary>
+            <pre><span class="lang-tag">JavaScript</span>const c = document.getElementById('clock');
+const ctx = c.getContext('2d');
+const cx = 150, cy = 150, r = 130;
+
+function drawClock() {
+  const now = new Date();
+  const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds();
+
+  ctx.clearRect(0, 0, 300, 300);
+  // face
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = '#0f172a';
+  ctx.fill();
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // hour markers ...
+  for (let i = 0; i < 12; i++) {
+    const a = (i * 30 - 90) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a)*(r-18), cy + Math.sin(a)*(r-18));
+    ctx.lineTo(cx + Math.cos(a)*(r-6), cy + Math.sin(a)*(r-6));
+    ctx.strokeStyle = i === 0 ? '#fbbf24' : '#64748b';
+    ctx.lineWidth = i === 0 ? 4 : 2;
+    ctx.stroke();
+  }
+
+  // hands ...
+  // hour hand
+  const ha = ((h + m/60) * 30 - 90) * Math.PI / 180;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(ha)*50, cy + Math.sin(ha)*50);
+  ctx.strokeStyle = '#60a5fa';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  // minute hand ...
+}
+setInterval(drawClock, 1000);
+drawClock();</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div class="tip-box">
+    <h3>💡 給 AI 下 prompt 的小技巧</h3>
+    <ul>
+      <li><strong>要具體：</strong>不要只說「畫一隻貓」，而是說「用 SVG 畫一隻橘色的貓，圓臉、尖耳朵、長尾巴，大小 400x400」</li>
+      <li><strong>指定格式：</strong>開頭直接說 <code>用 SVG</code> 或 <code>用 HTML5 Canvas + JavaScript</code></li>
+      <li><strong>給尺寸：</strong>加上 <code>尺寸 500x400</code> 避免 AI 亂猜大小</li>
+      <li><strong>要顏色：</strong>說清楚顏色，例如 <code>深藍色背景 + 金色文字</code></li>
+      <li><strong>要動畫：</strong>如果是 Canvas，說 <code>加上動畫，粒子會慢慢往上飄</code></li>
+      <li><strong>一鍵複製：</strong>直接跟 AI 說 <code>給我一份完整的 HTML 檔案，打開就能用</code></li>
+    </ul>
+  </div>
+
+  <div class="tip-box" style="border-left-color: #6366f1; margin-top: 1.5rem;">
+    <h3>🤖 推薦 AI 工具</h3>
+    <ul>
+      <li><strong>Grok (xAI)</strong> — 免費，擅長生成 SVG，回覆直接</li>
+      <li><strong>Gemini (Google)</strong> — 免費，對 HTML/Canvas 支援好</li>
+      <li><strong>ChatGPT (OpenAI)</strong> — 穩定，適合複雜動畫</li>
+      <li><strong>Claude (Anthropic)</strong> — 程式碼品質高，結構清楚</li>
+    </ul>
+    <p style="margin-top: 0.8rem; color: #94a3b8;">全部都可以直接貼上面 👆 的 prompt 來試試看！</p>
+  </div>
+
+  <footer>
+    Made with ❤️ for friends who want to draw with AI
+  </footer>
+</div>
+
+<script>
+function copyText(btn) {
+  const promptBox = btn.closest('.prompt-box');
+  const text = promptBox.childNodes[2].nodeValue.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ 已複製';
+    setTimeout(() => { btn.textContent = '複製'; }, 2000);
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNodeContents(promptBox.childNodes[2]);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    btn.textContent = '✅ 已複製';
+    setTimeout(() => { btn.textContent = '複製'; }, 2000);
+  });
+}
+
+// ===== 粒子動畫 =====
+(function() {
+  const canvas = document.getElementById('particleCanvas');
+  const ctx = canvas.getContext('2d');
+  const particles = [];
+  let mouseX = -9999, mouseY = -9999;
+
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mouseX = e.clientX - r.left;
+    mouseY = e.clientY - r.top;
+  });
+  canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
+
+  for (let i = 0; i < 80; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 2 + Math.random() * 5,
+      speed: 0.2 + Math.random() * 0.6,
+      hue: 200 + Math.random() * 100,
+    });
+  }
+
+  function drawParticles() {
+    ctx.fillStyle = 'rgba(10,10,30,0.15)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (const p of particles) {
+      p.y -= p.speed;
+      if (p.y < -p.r) p.y = canvas.height + p.r;
+
+      const dx = p.x - mouseX, dy = p.y - mouseY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 60) {
+        const angle = Math.atan2(dy, dx);
+        const force = (60 - dist) / 60;
+        p.x += Math.cos(angle) * force * 2;
+        p.y += Math.sin(angle) * force * 2;
+      }
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 80%, 70%, 0.6)`;
+      ctx.fill();
+
+      ctx.shadowColor = `hsla(${p.hue}, 80%, 70%, 0.3)`;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    requestAnimationFrame(drawParticles);
+  }
+  drawParticles();
+})();
+
+// ===== 時鐘動畫 =====
+(function() {
+  const canvas = document.getElementById('clockCanvas');
+  const ctx = canvas.getContext('2d');
+  const cx = 140, cy = 140, r = 125;
+
+  function drawClock() {
+    const now = new Date();
+    const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds() + now.getMilliseconds() / 1000;
+
+    ctx.clearRect(0, 0, 280, 280);
+
+    // face
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // hour markers
+    for (let i = 1; i <= 12; i++) {
+      const a = (i * 30 - 90) * Math.PI / 180;
+      const outer = r - 6, inner = (i % 3 === 0) ? r - 22 : r - 14;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * inner, cy + Math.sin(a) * inner);
+      ctx.lineTo(cx + Math.cos(a) * outer, cy + Math.sin(a) * outer);
+      ctx.strokeStyle = (i % 3 === 0) ? '#fbbf24' : '#475569';
+      ctx.lineWidth = (i % 3 === 0) ? 3 : 1.5;
+      ctx.stroke();
+    }
+
+    // numbers
+    ctx.fillStyle = '#64748b';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = 1; i <= 12; i++) {
+      const a = (i * 30 - 90) * Math.PI / 180;
+      const nr = r - 32;
+      ctx.fillText(i, cx + Math.cos(a) * nr, cy + Math.sin(a) * nr);
+    }
+
+    // hour hand
+    const ha = ((h + m / 60) * 30 - 90) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(ha) * 50, cy + Math.sin(ha) * 50);
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = '#60a5fa';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+
+    // minute hand
+    const ma = ((m + s / 60) * 6 - 90) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(ma) * 75, cy + Math.sin(ma) * 75);
+    ctx.strokeStyle = '#a78bfa';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#a78bfa';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+
+    // second hand
+    const sa = (s * 6 - 90) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(cx - Math.cos(sa) * 15, cy - Math.sin(sa) * 15);
+    ctx.lineTo(cx + Math.cos(sa) * 95, cy + Math.sin(sa) * 95);
+    ctx.strokeStyle = '#f87171';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = '#f87171';
+    ctx.shadowBlur = 12;
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // center dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#f87171';
+    ctx.fill();
+
+    requestAnimationFrame(drawClock);
+  }
+  drawClock();
+})();
+</script>
+</body>
+</html>
