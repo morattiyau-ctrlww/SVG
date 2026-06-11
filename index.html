@@ -412,47 +412,98 @@
     <div class="card">
       <div class="card-header">
         <span class="step-num">3</span>
-        <h2>動態粒子 (Canvas)</h2>
+        <h2>煙火秀 (Canvas)</h2>
         <span class="badge badge-canvas">Canvas</span>
       </div>
       <div class="card-body">
         <div class="prompt-box">
           <span class="label">🤖 複製這段 Prompt 給 AI</span>
           <button class="copy-btn" onclick="copyText(this)">複製</button>
-          Create an animated particle system using HTML5 Canvas and JavaScript. Draw 80 floating circles in different sizes and soft colors that drift upward slowly and wrap around. Dark background with a subtle glow effect on each particle. Add a gentle mouse interaction where particles slightly avoid the cursor. Size 400x300.
+          Create a fireworks animation using HTML5 Canvas and JavaScript. Rockets shoot up from random positions at the bottom and explode into colorful particles with trails. Multiple simultaneous explosions in different colors (red, gold, blue, green, purple). Dark night sky background. Each firework fades out gracefully. Size 400x300.
         </div>
         <div class="demo-area">
-          <canvas id="particleCanvas" width="380" height="280"></canvas>
+          <canvas id="fireworkCanvas" width="380" height="280"></canvas>
         </div>
         <div class="code-section">
           <details>
             <summary>📄 Canvas JavaScript 動畫</summary>
-            <pre><span class="lang-tag">JavaScript</span>const canvas = document.getElementById('c');
+            <pre><span class="lang-tag">JavaScript</span>const canvas = document.getElementById('fw');
 const ctx = canvas.getContext('2d');
-const particles = [];
+const rockets = [], particles = [];
+const colors = ['#f87171','#fbbf24','#60a5fa','#4ade80','#a78bfa','#f472b6'];
 
-for (let i = 0; i < 80; i++) {
-  particles.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    r: 2 + Math.random() * 6,
-    speed: 0.2 + Math.random() * 0.6,
-    color: `hsla(${200 + Math.random() * 100}, 80%, 70%, 0.6)`
+function launchRocket() {
+  const x = 30 + Math.random() * (canvas.width - 60);
+  rockets.push({
+    x, y: canvas.height,
+    targetY: 30 + Math.random() * (canvas.height * 0.45),
+    speed: 3 + Math.random() * 3,
+    angle: (Math.random() - 0.5) * 0.2,
+    trail: [],
   });
 }
 
+function explode(r) {
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  const count = 40 + Math.floor(Math.random() * 40);
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = 1 + Math.random() * 4;
+    particles.push({
+      x: r.x, y: r.y,
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      life: 1, decay: 0.008 + Math.random() * 0.012,
+      size: 1.5 + Math.random() * 2.5,
+      color,
+    });
+  }
+}
+
 function animate() {
-  ctx.fillStyle = 'rgba(10,10,30,0.15)';
+  ctx.fillStyle = 'rgba(10,10,30,0.2)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  for (const p of particles) {
-    p.y -= p.speed;
-    if (p.y < -p.r) p.y = canvas.height + p.r;
-    // mouse avoidance ...
+
+  if (Math.random() < 0.06) launchRocket();
+  if (Math.random() < 0.04) launchRocket();
+
+  for (let i = rockets.length - 1; i >= 0; i--) {
+    const r = rockets[i];
+    r.x += Math.sin(r.angle) * 0.5;
+    r.y -= r.speed;
+    r.trail.push({x: r.x, y: r.y});
+    if (r.trail.length > 8) r.trail.shift();
+    if (r.y <= r.targetY) { explode(r); rockets.splice(i, 1); continue; }
+  }
+
+  for (const r of rockets) {
+    for (let j = 1; j < r.trail.length; j++) {
+      ctx.beginPath();
+      ctx.moveTo(r.trail[j-1].x, r.trail[j-1].y);
+      ctx.lineTo(r.trail[j].x, r.trail[j].y);
+      ctx.strokeStyle = `rgba(255,255,255,${j / r.trail.length * 0.5})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = p.color;
+    ctx.arc(r.x, r.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
     ctx.fill();
   }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.04;
+    p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    ctx.globalAlpha = p.life;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
   requestAnimationFrame(animate);
 }
 animate();</pre>
@@ -484,57 +535,57 @@ animate();</pre>
               <linearGradient id="b5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f472b6"/><stop offset="100%" stop-color="#db2777"/></linearGradient>
             </defs>
             <rect width="400" height="300" fill="#0f172a" rx="10"/>
-            <line x1="60" y1="40" x2="60" y2="250" stroke="#334155" stroke-width="2"/>
-            <line x1="60" y1="250" x2="370" y2="250" stroke="#334155" stroke-width="2"/>
-            <g transform="translate(85,0)">
-              <rect x="0" y="130" width="44" height="120" rx="6" fill="url(#b1)">
+            <line x1="55" y1="40" x2="55" y2="250" stroke="#334155" stroke-width="2"/>
+            <line x1="55" y1="250" x2="380" y2="250" stroke="#334155" stroke-width="2"/>
+            <g transform="translate(70,0)">
+              <rect x="0" y="130" width="36" height="120" rx="4" fill="url(#b1)">
                 <animate attributeName="height" from="0" to="120" dur="0.8s" begin="0.1s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
                 <animate attributeName="y" from="250" to="130" dur="0.8s" begin="0.1s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
               </rect>
-              <text x="22" y="120" fill="#94a3b8" font-size="13" text-anchor="middle" opacity="0">
+              <text x="18" y="120" fill="#94a3b8" font-size="12" text-anchor="middle" opacity="0">
                 <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="0.9s" fill="freeze"/>
               </text>
-              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">S</text>
+              <text x="18" y="272" fill="#94a3b8" font-size="12" text-anchor="middle">S</text>
             </g>
-            <g transform="translate(155,0)">
-              <rect x="0" y="50" width="44" height="200" rx="6" fill="url(#b2)">
+            <g transform="translate(134,0)">
+              <rect x="0" y="50" width="36" height="200" rx="4" fill="url(#b2)">
                 <animate attributeName="height" from="0" to="200" dur="0.8s" begin="0.25s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
                 <animate attributeName="y" from="250" to="50" dur="0.8s" begin="0.25s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
               </rect>
-              <text x="22" y="40" fill="#94a3b8" font-size="13" text-anchor="middle" opacity="0">
+              <text x="18" y="40" fill="#94a3b8" font-size="12" text-anchor="middle" opacity="0">
                 <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="1.05s" fill="freeze"/>
               </text>
-              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">M</text>
+              <text x="18" y="272" fill="#94a3b8" font-size="12" text-anchor="middle">M</text>
             </g>
-            <g transform="translate(225,0)">
-              <rect x="0" y="10" width="44" height="240" rx="6" fill="url(#b3)">
+            <g transform="translate(199,0)">
+              <rect x="0" y="10" width="36" height="240" rx="4" fill="url(#b3)">
                 <animate attributeName="height" from="0" to="240" dur="0.8s" begin="0.4s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
                 <animate attributeName="y" from="250" to="10" dur="0.8s" begin="0.4s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
               </rect>
-              <text x="22" y="0" fill="#94a3b8" font-size="13" text-anchor="middle" opacity="0">
+              <text x="18" y="0" fill="#94a3b8" font-size="12" text-anchor="middle" opacity="0">
                 <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="1.2s" fill="freeze"/>
               </text>
-              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">L</text>
+              <text x="18" y="272" fill="#94a3b8" font-size="12" text-anchor="middle">L</text>
             </g>
-            <g transform="translate(295,0)">
-              <rect x="0" y="40" width="44" height="210" rx="6" fill="url(#b4)">
+            <g transform="translate(264,0)">
+              <rect x="0" y="40" width="36" height="210" rx="4" fill="url(#b4)">
                 <animate attributeName="height" from="0" to="210" dur="0.8s" begin="0.55s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
                 <animate attributeName="y" from="250" to="40" dur="0.8s" begin="0.55s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
               </rect>
-              <text x="22" y="30" fill="#94a3b8" font-size="13" text-anchor="middle" opacity="0">
+              <text x="18" y="30" fill="#94a3b8" font-size="12" text-anchor="middle" opacity="0">
                 <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="1.35s" fill="freeze"/>
               </text>
-              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">XL</text>
+              <text x="18" y="272" fill="#94a3b8" font-size="12" text-anchor="middle">XL</text>
             </g>
-            <g transform="translate(365,0)">
-              <rect x="0" y="70" width="44" height="180" rx="6" fill="url(#b5)">
+            <g transform="translate(329,0)">
+              <rect x="0" y="70" width="36" height="180" rx="4" fill="url(#b5)">
                 <animate attributeName="height" from="0" to="180" dur="0.8s" begin="0.7s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
                 <animate attributeName="y" from="250" to="70" dur="0.8s" begin="0.7s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
               </rect>
-              <text x="22" y="60" fill="#94a3b8" font-size="13" text-anchor="middle" opacity="0">
+              <text x="18" y="60" fill="#94a3b8" font-size="12" text-anchor="middle" opacity="0">
                 <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="1.5s" fill="freeze"/>
               </text>
-              <text x="22" y="272" fill="#94a3b8" font-size="13" text-anchor="middle">XXL</text>
+              <text x="18" y="272" fill="#94a3b8" font-size="12" text-anchor="middle">XXL</text>
             </g>
           </svg>
         </div>
@@ -673,60 +724,88 @@ function copyText(btn) {
   });
 }
 
-// ===== 粒子動畫 =====
+// ===== 煙火動畫 =====
 (function() {
-  const canvas = document.getElementById('particleCanvas');
+  const canvas = document.getElementById('fireworkCanvas');
   const ctx = canvas.getContext('2d');
-  const particles = [];
-  let mouseX = -9999, mouseY = -9999;
+  const rockets = [], particles = [];
+  const colors = ['#f87171','#fbbf24','#60a5fa','#4ade80','#a78bfa','#f472b6','#fb923c','#38bdf8'];
 
-  canvas.addEventListener('mousemove', e => {
-    const r = canvas.getBoundingClientRect();
-    mouseX = e.clientX - r.left;
-    mouseY = e.clientY - r.top;
-  });
-  canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
-
-  for (let i = 0; i < 80; i++) {
-    particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: 2 + Math.random() * 5,
-      speed: 0.2 + Math.random() * 0.6,
-      hue: 200 + Math.random() * 100,
+  function launchRocket() {
+    const x = 30 + Math.random() * (canvas.width - 60);
+    rockets.push({
+      x, y: canvas.height,
+      targetY: 30 + Math.random() * (canvas.height * 0.45),
+      speed: 3 + Math.random() * 3,
+      angle: (Math.random() - 0.5) * 0.2,
+      trail: [],
     });
   }
 
-  function drawParticles() {
-    ctx.fillStyle = 'rgba(10,10,30,0.15)';
+  function explode(r) {
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const count = 40 + Math.floor(Math.random() * 40);
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 1 + Math.random() * 4;
+      particles.push({
+        x: r.x, y: r.y,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        life: 1, decay: 0.008 + Math.random() * 0.012,
+        size: 1.5 + Math.random() * 2.5,
+        color,
+      });
+    }
+  }
+
+  function drawFireworks() {
+    ctx.fillStyle = 'rgba(10,10,30,0.2)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (const p of particles) {
-      p.y -= p.speed;
-      if (p.y < -p.r) p.y = canvas.height + p.r;
+    if (Math.random() < 0.06) launchRocket();
+    if (Math.random() < 0.04) launchRocket();
 
-      const dx = p.x - mouseX, dy = p.y - mouseY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 60) {
-        const angle = Math.atan2(dy, dx);
-        const force = (60 - dist) / 60;
-        p.x += Math.cos(angle) * force * 2;
-        p.y += Math.sin(angle) * force * 2;
-      }
-
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${p.hue}, 80%, 70%, 0.6)`;
-      ctx.fill();
-
-      ctx.shadowColor = `hsla(${p.hue}, 80%, 70%, 0.3)`;
-      ctx.shadowBlur = 10;
-      ctx.fill();
-      ctx.shadowBlur = 0;
+    for (let i = rockets.length - 1; i >= 0; i--) {
+      const r = rockets[i];
+      r.x += Math.sin(r.angle) * 0.5;
+      r.y -= r.speed;
+      r.trail.push({x: r.x, y: r.y});
+      if (r.trail.length > 8) r.trail.shift();
+      if (r.y <= r.targetY) { explode(r); rockets.splice(i, 1); continue; }
     }
-    requestAnimationFrame(drawParticles);
+
+    for (const r of rockets) {
+      for (let j = 1; j < r.trail.length; j++) {
+        ctx.beginPath();
+        ctx.moveTo(r.trail[j-1].x, r.trail[j-1].y);
+        ctx.lineTo(r.trail[j].x, r.trail[j].y);
+        ctx.strokeStyle = `rgba(255,255,255,${j / r.trail.length * 0.5})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.04;
+      p.life -= p.decay;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      ctx.globalAlpha = p.life;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    requestAnimationFrame(drawFireworks);
   }
-  drawParticles();
+  drawFireworks();
 })();
 
 // ===== 時鐘動畫 =====
