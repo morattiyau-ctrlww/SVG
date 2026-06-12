@@ -707,13 +707,13 @@ drawClock();</pre>
 <script>
 function copyText(btn) {
   const promptBox = btn.closest('.prompt-box');
-  const text = promptBox.childNodes[2].nodeValue.trim();
+  const text = promptBox.lastChild.nodeValue.trim();
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = '✅ 已複製';
     setTimeout(() => { btn.textContent = '複製'; }, 2000);
   }).catch(() => {
     const range = document.createRange();
-    range.selectNodeContents(promptBox.childNodes[2]);
+    range.selectNodeContents(promptBox.lastChild);
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
